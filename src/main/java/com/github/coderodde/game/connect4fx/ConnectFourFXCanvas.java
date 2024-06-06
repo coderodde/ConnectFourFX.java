@@ -3,10 +3,19 @@ package com.github.coderodde.game.connect4fx;
 import com.github.coderodde.game.connect4.ConnectFourBoard;
 import static com.github.coderodde.game.connect4.ConnectFourBoard.COLUMNS;
 import static com.github.coderodde.game.connect4.ConnectFourBoard.ROWS;
+import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
+import com.github.coderodde.game.zerosum.SearchEngine;
+import com.github.coderodde.game.zerosum.impl.AlphaBetaPruningSearchEngine;
 import java.awt.Point;
+import java.util.List;
+import java.util.Optional;
+import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
@@ -32,6 +41,11 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final double RADIUS_SUBSTRACTION_DELTA = 10.0;
     private static final int CELL_Y_NOT_FOUND = -1;
     private static final int INITIAL_AIM_X = 3;
+    private static final int SEARCH_DEPTH = 8;
+    
+    private final SearchEngine<ConnectFourBoard> engine = 
+            new AlphaBetaPruningSearchEngine<>(
+                    new ConnectFourHeuristicFunction());
     
     private int previousAimX = INITIAL_AIM_X;
     private ConnectFourBoard board = new ConnectFourBoard();
@@ -44,17 +58,122 @@ public final class ConnectFourFXCanvas extends Canvas {
         setSize();
         paintBackground();
         
-        this.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
-            processMouseMoved(e);
+        this.addEventFilter(MouseEvent.MOUSE_MOVED, event -> {
+            processMouseMoved(event);
         });
         
-        this.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-        
+        this.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            processMouseClicked(event);
         });
     }
     
     public void hit(final int x) {
+        final int y = getEmptyCellYForX(x);
         
+        if (y == CELL_Y_NOT_FOUND) {
+            // The column at X-index of x is full:
+            return;
+        }
+        
+        board = board.makePly(x, PlayerType.MINIMIZING_PLAYER);
+        
+        paintBackground();
+        paintBoard();
+        
+        if (board.isTerminal()) {
+            reportEndResult();
+            return;
+        }
+        
+        board = engine.search(board, SEARCH_DEPTH);
+        
+        if (board.isTerminal()) {
+            reportEndResult();
+            return;
+        }
+        
+        paintBackground();
+        paintBoard();
+    }
+    
+    private static Alert getEndResultReportAlert(final String contentText) {
+        final Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("");
+        alert.setHeaderText(null);
+        alert.setContentText(contentText);
+        return alert;
+    }
+    
+    private void processEndOfGameOptional(final Optional<ButtonType> optional) {
+        if (optional.isPresent() && optional.get().equals(ButtonType.YES)) {
+            board = new ConnectFourBoard();
+        } else {
+            Platform.exit();
+            System.out.println("After Platform.exit();");
+            System.exit(0);
+        }
+    }
+    
+    private void reportEndResult() {
+        if (board.isTie()) {
+            
+            final Optional<ButtonType> optional =
+                    getEndResultReportAlert(
+                            "It's a tie! Do you want to play again?")
+                            .showAndWait();
+            
+            processEndOfGameOptional(optional);
+            
+        } else if (board.isWinningFor(PlayerType.MINIMIZING_PLAYER)) {
+            
+            colorWinningPattern(board.getWinningPattern(), 
+                                PlayerType.MINIMIZING_PLAYER);
+            
+            final Optional<ButtonType> optional = 
+                    getEndResultReportAlert(
+                            "You won! Do you want to play again?")
+                            .showAndWait();
+            
+            processEndOfGameOptional(optional);
+            
+        } else if (board.isWinningFor(PlayerType.MAXIMIZING_PLAYER)) {
+            
+            colorWinningPattern(board.getWinningPattern(), 
+                                PlayerType.MINIMIZING_PLAYER);
+            
+            final Optional<ButtonType> optional = 
+                    getEndResultReportAlert(
+                            "You lost! Do you want to play again?")
+                            .showAndWait();
+            
+            processEndOfGameOptional(optional);
+        }
+    }
+    
+    private void colorWinningPattern(final List<Point> winningPattern,
+                                     final PlayerType playerType) {
+        final Color color;
+        
+        switch (playerType) {
+            case MINIMIZING_PLAYER:
+                color = HUMAN_PLAYER_CELL_COLOR;
+                break;
+                
+            case MAXIMIZING_PLAYER:
+                color = AI_PLAYER_CELL_COLOR;
+                break;
+                
+            default:
+                throw new IllegalStateException(
+                        "Unknown PlayerType: " + playerType);
+        }
+    }
+    
+    private void processMouseClicked(final MouseEvent mouseEvent) {
+        final double mouseX = mouseEvent.getSceneX();
+        final int cellX = (int)(mouseX / cellLength);
+        
+        hit(cellX);
     }
     
     private void processMouseMoved(final MouseEvent mouseEvent) {
@@ -92,28 +211,33 @@ public final class ConnectFourFXCanvas extends Canvas {
                            final int x,
                            final int y) {
         
+        final double topLeftX = cellLength * x + RADIUS_SUBSTRACTION_DELTA;
+        final double topLeftY = cellLength * y + RADIUS_SUBSTRACTION_DELTA;
+        final double innerWidth = cellLength - 2.0 * RADIUS_SUBSTRACTION_DELTA;
+        final Color color;
+        
         if (playerType == null) {
-            return;
+            color = Color.WHITE;
+        } else if (playerType == PlayerType.MINIMIZING_PLAYER) {
+            color = HUMAN_PLAYER_CELL_COLOR;
+        } else if (playerType == PlayerType.MAXIMIZING_PLAYER) {
+            color = AI_PLAYER_CELL_COLOR;
+        } else {
+            throw new IllegalStateException(
+                    "Unknown player type: " + playerType);
         }
         
-        final double topLeftX = cellLength * x;
-        final double topLeftY = cellLength * y;
-        final Color color = 
-                playerType == PlayerType.MINIMIZING_PLAYER ?
-                            HUMAN_PLAYER_CELL_COLOR :
-                            AI_PLAYER_CELL_COLOR;
-                            
         this.getGraphicsContext2D().setFill(color);
         this.getGraphicsContext2D()
             .fillOval(topLeftX, 
                       topLeftY, 
-                      cellLength, 
-                      cellLength);
+                      innerWidth, 
+                      innerWidth);
     }
     
     private void paintCellSelection(final int cellX, final int cellY) {
-        final double topLeftX = cellLength * cellX;
-        final double topLeftY = cellLength * cellY;
+        final double topLeftX = cellLength * cellX + RADIUS_SUBSTRACTION_DELTA;
+        final double topLeftY = cellLength * cellY + RADIUS_SUBSTRACTION_DELTA;
         final double innerWidth = cellLength - 2.0 * RADIUS_SUBSTRACTION_DELTA;
         
         this.getGraphicsContext2D().setFill(AIM_COLOR);
@@ -121,15 +245,8 @@ public final class ConnectFourFXCanvas extends Canvas {
                 .fillOval(
                         topLeftX, 
                         topLeftY,
-                        cellLength,
-                        cellLength);
-        
-        this.getGraphicsContext2D().setFill(Color.WHITE);
-        this.getGraphicsContext2D()
-                .fillOval(topLeftX + RADIUS_SUBSTRACTION_DELTA, 
-                          topLeftY + RADIUS_SUBSTRACTION_DELTA, 
-                          innerWidth, 
-                          innerWidth);
+                        innerWidth,
+                        innerWidth);
     }
     
     private int getEmptyCellYForX(final int cellX) {
@@ -140,45 +257,6 @@ public final class ConnectFourFXCanvas extends Canvas {
         }
         
         return CELL_Y_NOT_FOUND;
-    }
-    
-    private Point convertMouseLocationToCellPoint(final MouseEvent mouseEvent) {
-        final double x = mouseEvent.getSceneX();
-        final double y = mouseEvent.getSceneY();
-        
-        final int cellX = (int)(x / cellLength);
-        final int cellY = (int)(y / cellLength);
-        
-        final double cellCenterPointX = cellLength * cellX + cellLength / 2.0;
-        final double cellCenterPointY = cellLength * cellY + cellLength / 2.0;
-        
-        final double maximumRadius = cellLength / 2.0 
-                                   - RADIUS_SUBSTRACTION_DELTA;
-        
-        final double mouseCursorDistanceFromCellCenter = 
-                getMouseCursorDistanceFromCellCenter(
-                        cellCenterPointX, 
-                        cellCenterPointY, 
-                        x, 
-                        y);
-        
-        if (mouseCursorDistanceFromCellCenter > maximumRadius) {
-            return null;
-        }
-        
-        return new Point(cellX, cellY);
-    }
-    
-    private static double getMouseCursorDistanceFromCellCenter(
-            final double cellCenterX,
-            final double cellCenterY,
-            final double mouseCursorX,
-            final double mouseCursorY) {
-        
-        final double dx = cellCenterX - mouseCursorX;
-        final double dy = cellCenterY - mouseCursorY;
-        
-        return Math.sqrt(dx * dx + dy * dy);
     }
     
     private void setSize() {
@@ -207,25 +285,5 @@ public final class ConnectFourFXCanvas extends Canvas {
         
         this.getGraphicsContext2D().setFill(BACKGROUND_COLOR);
         this.getGraphicsContext2D().fillRect(0.0, 0.0, width, height);
-        
-        paintAllCellsToWhite();
-    }
-    
-    private void paintAllCellsToWhite() {
-        this.getGraphicsContext2D().setFill(Color.WHITE);
-        
-        for (int y = 0; y < ConnectFourBoard.ROWS; y++) {
-            for (int x = 0; x < ConnectFourBoard.COLUMNS; x++) {
-                paintCellToWhite(x, y);
-            }
-        }
-    }
-    
-    private void paintCellToWhite(final int x, final int y) {
-        this.getGraphicsContext2D()
-            .fillOval(x * cellLength + RADIUS_SUBSTRACTION_DELTA,
-                      y * cellLength + RADIUS_SUBSTRACTION_DELTA,
-                      cellLength - 2.0 * RADIUS_SUBSTRACTION_DELTA,
-                      cellLength - 2.0 * RADIUS_SUBSTRACTION_DELTA);
     }
 }
