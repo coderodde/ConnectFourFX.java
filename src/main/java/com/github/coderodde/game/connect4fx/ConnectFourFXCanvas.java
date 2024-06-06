@@ -37,6 +37,8 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final Color AI_PLAYER_CELL_COLOR = 
             Color.valueOf("#b33729");
     
+    private static final Color WINNING_PATTERN_COLOR = Color.BLACK;
+    
     private static final double CELL_LENGTH_SUBSTRACT = 10.0;
     private static final double RADIUS_SUBSTRACTION_DELTA = 10.0;
     private static final int CELL_Y_NOT_FOUND = -1;
@@ -52,9 +54,6 @@ public final class ConnectFourFXCanvas extends Canvas {
     private double cellLength;
     
     public ConnectFourFXCanvas() {
-        board = board.makePly(2, PlayerType.MINIMIZING_PLAYER);
-        board = board.makePly(4, PlayerType.MAXIMIZING_PLAYER);
-        
         setSize();
         paintBackground();
         
@@ -81,6 +80,8 @@ public final class ConnectFourFXCanvas extends Canvas {
         paintBoard();
         
         if (board.isTerminal()) {
+            paintBackground();
+            paintBoard();
             reportEndResult();
             return;
         }
@@ -88,6 +89,8 @@ public final class ConnectFourFXCanvas extends Canvas {
         board = engine.search(board, SEARCH_DEPTH);
         
         if (board.isTerminal()) {
+            paintBackground();
+            paintBoard();
             reportEndResult();
             return;
         }
@@ -98,9 +101,13 @@ public final class ConnectFourFXCanvas extends Canvas {
     
     private static Alert getEndResultReportAlert(final String contentText) {
         final Alert alert = new Alert(AlertType.CONFIRMATION);
+        
+        alert.getButtonTypes().clear();
+        alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
         alert.setTitle("");
         alert.setHeaderText(null);
         alert.setContentText(contentText);
+        
         return alert;
     }
     
@@ -109,7 +116,6 @@ public final class ConnectFourFXCanvas extends Canvas {
             board = new ConnectFourBoard();
         } else {
             Platform.exit();
-            System.out.println("After Platform.exit();");
             System.exit(0);
         }
     }
@@ -139,7 +145,7 @@ public final class ConnectFourFXCanvas extends Canvas {
         } else if (board.isWinningFor(PlayerType.MAXIMIZING_PLAYER)) {
             
             colorWinningPattern(board.getWinningPattern(), 
-                                PlayerType.MINIMIZING_PLAYER);
+                                PlayerType.MAXIMIZING_PLAYER);
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
@@ -152,20 +158,9 @@ public final class ConnectFourFXCanvas extends Canvas {
     
     private void colorWinningPattern(final List<Point> winningPattern,
                                      final PlayerType playerType) {
-        final Color color;
         
-        switch (playerType) {
-            case MINIMIZING_PLAYER:
-                color = HUMAN_PLAYER_CELL_COLOR;
-                break;
-                
-            case MAXIMIZING_PLAYER:
-                color = AI_PLAYER_CELL_COLOR;
-                break;
-                
-            default:
-                throw new IllegalStateException(
-                        "Unknown PlayerType: " + playerType);
+        for (final Point point : winningPattern) {
+            paintCell(WINNING_PATTERN_COLOR, point.x, point.y);
         }
     }
     
@@ -201,31 +196,37 @@ public final class ConnectFourFXCanvas extends Canvas {
         for (int y = 0; y < ROWS; y++) {
             for (int x = 0; x < COLUMNS; x++) {
                 final PlayerType playerType = board.get(x, y);
+                final Color color = getColor(playerType);
                 
-                paintCell(playerType, x, y);
+                paintCell(color, x, y);
             }
         }
     }
     
-    private void paintCell(final PlayerType playerType, 
+    private static Color getColor(final PlayerType playerType) {
+        if (playerType == null) {
+            return Color.WHITE;
+        } else switch (playerType) {
+            case MAXIMIZING_PLAYER -> {
+                return AI_PLAYER_CELL_COLOR;
+            }
+                
+            case MINIMIZING_PLAYER -> {
+                return HUMAN_PLAYER_CELL_COLOR;
+            }
+                
+            default -> throw new IllegalStateException(
+                        "Unknown PlayerType: " + playerType);
+        }
+    }
+    
+    private void paintCell(final Color color, 
                            final int x,
                            final int y) {
         
         final double topLeftX = cellLength * x + RADIUS_SUBSTRACTION_DELTA;
         final double topLeftY = cellLength * y + RADIUS_SUBSTRACTION_DELTA;
         final double innerWidth = cellLength - 2.0 * RADIUS_SUBSTRACTION_DELTA;
-        final Color color;
-        
-        if (playerType == null) {
-            color = Color.WHITE;
-        } else if (playerType == PlayerType.MINIMIZING_PLAYER) {
-            color = HUMAN_PLAYER_CELL_COLOR;
-        } else if (playerType == PlayerType.MAXIMIZING_PLAYER) {
-            color = AI_PLAYER_CELL_COLOR;
-        } else {
-            throw new IllegalStateException(
-                    "Unknown player type: " + playerType);
-        }
         
         this.getGraphicsContext2D().setFill(color);
         this.getGraphicsContext2D()
