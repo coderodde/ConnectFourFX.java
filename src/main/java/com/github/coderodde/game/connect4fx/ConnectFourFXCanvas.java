@@ -161,7 +161,26 @@ public final class ConnectFourFXCanvas extends Canvas {
         
         for (final Point point : winningPattern) {
             paintCell(WINNING_PATTERN_COLOR, point.x, point.y);
+            paintInnerCell(point.x, point.y, playerType);
         }
+    }
+    
+    private void paintInnerCell(final int x, 
+                                  final int y, 
+                                  final PlayerType playerType) {
+        final double topLeftX = 
+                cellLength * x + 2.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        final double topLeftY = 
+                cellLength * y + 2.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        final double diameter = cellLength - 4.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        this.getGraphicsContext2D().setFill(getColor(playerType));
+        this.getGraphicsContext2D().fillOval(topLeftX,
+                                             topLeftY,
+                                             diameter, 
+                                             diameter);
     }
     
     private void processMouseClicked(final MouseEvent mouseEvent) {
