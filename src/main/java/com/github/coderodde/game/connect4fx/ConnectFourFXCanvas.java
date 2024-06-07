@@ -6,7 +6,7 @@ import static com.github.coderodde.game.connect4.ConnectFourBoard.ROWS;
 import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
 import com.github.coderodde.game.zerosum.SearchEngine;
-import com.github.coderodde.game.zerosum.impl.AlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +46,7 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final int SEARCH_DEPTH = 8;
     
     private final SearchEngine<ConnectFourBoard> engine = 
-            new AlphaBetaPruningSearchEngine<>(
+            new ConnectFourAlphaBetaPruningSearchEngine(
                     new ConnectFourHeuristicFunction());
     
     private int previousAimX = INITIAL_AIM_X;
@@ -75,7 +75,7 @@ public final class ConnectFourFXCanvas extends Canvas {
         }
         
         previousAimX = x;
-        board = board.makePly(x, PlayerType.MINIMIZING_PLAYER);
+        board.makePly(x, PlayerType.MINIMIZING_PLAYER);
         
         paintBackground();
         paintBoard();
