@@ -67,13 +67,14 @@ public final class ConnectFourFXCanvas extends Canvas {
     }
     
     public void hit(final int x) {
-        final int y = getEmptyCellYForX(x);
+        int y = getEmptyCellYForX(x);
         
         if (y == CELL_Y_NOT_FOUND) {
             // The column at X-index of x is full:
             return;
         }
         
+        previousAimX = x;
         board = board.makePly(x, PlayerType.MINIMIZING_PLAYER);
         
         paintBackground();
@@ -97,6 +98,12 @@ public final class ConnectFourFXCanvas extends Canvas {
         
         paintBackground();
         paintBoard();
+        
+        y = getEmptyCellYForX(x);
+        
+        if (y != CELL_Y_NOT_FOUND) {
+            paintCell(AIM_COLOR, x, y);
+        }
     }
     
     private static Alert getEndResultReportAlert(final String contentText) {
