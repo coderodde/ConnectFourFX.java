@@ -132,8 +132,8 @@ public final class ConnectFourFXCanvas extends Canvas {
             
         } else if (board.isWinningFor(PlayerType.MINIMIZING_PLAYER)) {
             
-            colorWinningPattern(board.getWinningPattern(), 
-                                PlayerType.MINIMIZING_PLAYER);
+            colorWinningPattern(PlayerType.MINIMIZING_PLAYER,
+                                board.getWinningPattern());
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
@@ -144,8 +144,8 @@ public final class ConnectFourFXCanvas extends Canvas {
             
         } else if (board.isWinningFor(PlayerType.MAXIMIZING_PLAYER)) {
             
-            colorWinningPattern(board.getWinningPattern(), 
-                                PlayerType.MAXIMIZING_PLAYER);
+            colorWinningPattern(PlayerType.MAXIMIZING_PLAYER,
+                                board.getWinningPattern());
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
@@ -156,18 +156,18 @@ public final class ConnectFourFXCanvas extends Canvas {
         }
     }
     
-    private void colorWinningPattern(final List<Point> winningPattern,
-                                     final PlayerType playerType) {
+    private void colorWinningPattern(final PlayerType playerType,
+                                     final List<Point> winningPattern) {
         
         for (final Point point : winningPattern) {
             paintCell(WINNING_PATTERN_COLOR, point.x, point.y);
-            paintInnerCell(point.x, point.y, playerType);
+            paintInnerCell(playerType, point.x, point.y);
         }
     }
     
-    private void paintInnerCell(final int x, 
-                                  final int y, 
-                                  final PlayerType playerType) {
+    private void paintInnerCell(final PlayerType playerType,
+                                final int x, 
+                                final int y) {
         final double topLeftX = 
                 cellLength * x + 2.0 * RADIUS_SUBSTRACTION_DELTA;
         
