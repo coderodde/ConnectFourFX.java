@@ -74,7 +74,7 @@ public final class ConnectFourFXCanvas extends Canvas {
             return;
         }
         
-        board = board.makePly(x, PlayerType.MINIMIZING_PLAYER);
+        board.makePly(x, PlayerType.MINIMIZING_PLAYER);
         
         paintBackground();
         paintBoard();
