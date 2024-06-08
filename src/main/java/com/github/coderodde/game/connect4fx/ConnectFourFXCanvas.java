@@ -113,9 +113,9 @@ public final class ConnectFourFXCanvas extends Canvas {
         
         alert.getButtonTypes().clear();
         alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
-        alert.setTitle("");
-        alert.setHeaderText(null);
-        alert.setContentText(contentText);
+        alert.setTitle("Game over");
+        alert.setHeaderText(contentText);
+        alert.setContentText("Do you want to play again?");
         
         return alert;
     }
@@ -134,7 +134,7 @@ public final class ConnectFourFXCanvas extends Canvas {
             
             final Optional<ButtonType> optional =
                     getEndResultReportAlert(
-                            "It's a tie! Do you want to play again?")
+                            "It's a tie!")
                             .showAndWait();
             
             processEndOfGameOptional(optional);
@@ -146,7 +146,7 @@ public final class ConnectFourFXCanvas extends Canvas {
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
-                            "You won! Do you want to play again?")
+                            "You won!")
                             .showAndWait();
             
             processEndOfGameOptional(optional);
@@ -158,7 +158,7 @@ public final class ConnectFourFXCanvas extends Canvas {
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
-                            "You lost! Do you want to play again?")
+                            "You lost!")
                             .showAndWait();
             
             processEndOfGameOptional(optional);
