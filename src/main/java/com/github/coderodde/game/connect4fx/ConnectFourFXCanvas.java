@@ -7,6 +7,7 @@ import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
 import com.github.coderodde.game.zerosum.SearchEngine;
 import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.ParallelConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
@@ -43,10 +44,10 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final double RADIUS_SUBSTRACTION_DELTA = 10.0;
     private static final int CELL_Y_NOT_FOUND = -1;
     private static final int INITIAL_AIM_X = 3;
-    private static final int SEARCH_DEPTH = 8;
+    private static final int SEARCH_DEPTH = 9;
     
     private final SearchEngine<ConnectFourBoard> engine = 
-            new ConnectFourAlphaBetaPruningSearchEngine(
+            new ParallelConnectFourAlphaBetaPruningSearchEngine(
                     new ConnectFourHeuristicFunction());
     
     private int previousAimX = INITIAL_AIM_X;
