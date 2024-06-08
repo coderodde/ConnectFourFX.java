@@ -7,6 +7,7 @@ import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
 import com.github.coderodde.game.zerosum.SearchEngine;
 import com.github.coderodde.game.zerosum.impl.AlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +50,9 @@ public final class ConnectFourFXCanvas extends Canvas {
             new AlphaBetaPruningSearchEngine<>(
                     new ConnectFourHeuristicFunction());
     
+//            new ConnectFourAlphaBetaPruningSearchEngine(
+//                    new ConnectFourHeuristicFunction());
+    
     private int previousAimX = INITIAL_AIM_X;
     private ConnectFourBoard board = new ConnectFourBoard();
     private double cellLength;
@@ -67,13 +71,14 @@ public final class ConnectFourFXCanvas extends Canvas {
     }
     
     public void hit(final int x) {
-        final int y = getEmptyCellYForX(x);
+        int y = getEmptyCellYForX(x);
         
         if (y == CELL_Y_NOT_FOUND) {
             // The column at X-index of x is full:
             return;
         }
         
+        previousAimX = x;
         board.makePly(x, PlayerType.MINIMIZING_PLAYER);
         
         paintBackground();
@@ -97,6 +102,12 @@ public final class ConnectFourFXCanvas extends Canvas {
         
         paintBackground();
         paintBoard();
+        
+        y = getEmptyCellYForX(x);
+        
+        if (y != CELL_Y_NOT_FOUND) {
+            paintCell(AIM_COLOR, x, y);
+        }
     }
     
     private static Alert getEndResultReportAlert(final String contentText) {
@@ -132,8 +143,8 @@ public final class ConnectFourFXCanvas extends Canvas {
             
         } else if (board.isWinningFor(PlayerType.MINIMIZING_PLAYER)) {
             
-            colorWinningPattern(board.getWinningPattern(), 
-                                PlayerType.MINIMIZING_PLAYER);
+            colorWinningPattern(PlayerType.MINIMIZING_PLAYER,
+                                board.getWinningPattern());
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
@@ -144,8 +155,8 @@ public final class ConnectFourFXCanvas extends Canvas {
             
         } else if (board.isWinningFor(PlayerType.MAXIMIZING_PLAYER)) {
             
-            colorWinningPattern(board.getWinningPattern(), 
-                                PlayerType.MAXIMIZING_PLAYER);
+            colorWinningPattern(PlayerType.MAXIMIZING_PLAYER,
+                                board.getWinningPattern());
             
             final Optional<ButtonType> optional = 
                     getEndResultReportAlert(
@@ -156,12 +167,31 @@ public final class ConnectFourFXCanvas extends Canvas {
         }
     }
     
-    private void colorWinningPattern(final List<Point> winningPattern,
-                                     final PlayerType playerType) {
+    private void colorWinningPattern(final PlayerType playerType,
+                                     final List<Point> winningPattern) {
         
         for (final Point point : winningPattern) {
             paintCell(WINNING_PATTERN_COLOR, point.x, point.y);
+            paintInnerCell(playerType, point.x, point.y);
         }
+    }
+    
+    private void paintInnerCell(final PlayerType playerType,
+                                final int x, 
+                                final int y) {
+        final double topLeftX = 
+                cellLength * x + 2.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        final double topLeftY = 
+                cellLength * y + 2.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        final double diameter = cellLength - 4.0 * RADIUS_SUBSTRACTION_DELTA;
+        
+        this.getGraphicsContext2D().setFill(getColor(playerType));
+        this.getGraphicsContext2D().fillOval(topLeftX,
+                                             topLeftY,
+                                             diameter, 
+                                             diameter);
     }
     
     private void processMouseClicked(final MouseEvent mouseEvent) {
