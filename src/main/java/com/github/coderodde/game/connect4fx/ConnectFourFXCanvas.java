@@ -42,7 +42,7 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final double RADIUS_SUBSTRACTION_DELTA = 10.0;
     private static final int CELL_Y_NOT_FOUND = -1;
     private static final int INITIAL_AIM_X = 3;
-    private static final int SEARCH_DEPTH = 9;
+    private static final int SEARCH_DEPTH = 8;
     
     private final ConnectFourAlphaBetaPruningSearchEngine engine =
                     new ConnectFourAlphaBetaPruningSearchEngine(
