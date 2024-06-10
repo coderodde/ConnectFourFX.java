@@ -6,6 +6,7 @@ import static com.github.coderodde.game.connect4.ConnectFourBoard.ROWS;
 import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
 import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.ParallelConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
@@ -42,14 +43,13 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final double RADIUS_SUBSTRACTION_DELTA = 10.0;
     private static final int CELL_Y_NOT_FOUND = -1;
     private static final int INITIAL_AIM_X = 3;
-    private static final int SEARCH_DEPTH = 8;
+    private static final int SEARCH_DEPTH = 9;
+    private static final int SEED_DEPTH = 2;
     
-    private final ConnectFourAlphaBetaPruningSearchEngine engine =
-                    new ConnectFourAlphaBetaPruningSearchEngine(
-                            new ConnectFourHeuristicFunction());
-    
-//            new ConnectFourAlphaBetaPruningSearchEngine(
-//                    new ConnectFourHeuristicFunction());
+    private final ParallelConnectFourAlphaBetaPruningSearchEngine engine =
+            new ParallelConnectFourAlphaBetaPruningSearchEngine(
+                    new ConnectFourHeuristicFunction(),
+                    SEED_DEPTH);
     
     private int previousAimX = INITIAL_AIM_X;
     private ConnectFourBoard board = new ConnectFourBoard();
@@ -89,7 +89,13 @@ public final class ConnectFourFXCanvas extends Canvas {
             return;
         }
         
+        final long startTime = System.currentTimeMillis();
+        
         board = engine.search(board, SEARCH_DEPTH);
+        
+        final long endTime = System.currentTimeMillis();
+        
+        System.out.printf("AI took %d milliseconds.\n", endTime - startTime);
         
         if (board.isTerminal()) {
             paintBackground();
