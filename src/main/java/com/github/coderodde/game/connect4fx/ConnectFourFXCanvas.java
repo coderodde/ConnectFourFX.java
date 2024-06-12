@@ -5,7 +5,8 @@ import static com.github.coderodde.game.connect4.ConnectFourBoard.COLUMNS;
 import static com.github.coderodde.game.connect4.ConnectFourBoard.ROWS;
 import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
 import com.github.coderodde.game.zerosum.PlayerType;
-import com.github.coderodde.game.zerosum.impl.ParallelConnectFourAlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.AlphaBetaPruningSearchEngine;
+import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
@@ -45,10 +46,9 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final int SEARCH_DEPTH = 9;
     private static final int SEED_DEPTH = 2;
     
-    private final ParallelConnectFourAlphaBetaPruningSearchEngine engine =
-            new ParallelConnectFourAlphaBetaPruningSearchEngine(
-                    new ConnectFourHeuristicFunction(),
-                    SEED_DEPTH);
+    private final ConnectFourAlphaBetaPruningSearchEngine engine =
+            new ConnectFourAlphaBetaPruningSearchEngine(
+                    new ConnectFourHeuristicFunction());
     
     private int previousAimX = INITIAL_AIM_X;
     private ConnectFourBoard board = new ConnectFourBoard();
