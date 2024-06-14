@@ -4,20 +4,22 @@ import com.github.coderodde.game.connect4.ConnectFourBoard;
 import static com.github.coderodde.game.connect4.ConnectFourBoard.COLUMNS;
 import static com.github.coderodde.game.connect4.ConnectFourBoard.ROWS;
 import com.github.coderodde.game.connect4.ConnectFourHeuristicFunction;
+import com.github.coderodde.game.connect4.SearchProgress;
 import com.github.coderodde.game.zerosum.PlayerType;
-import com.github.coderodde.game.zerosum.SearchEngine;
-import com.github.coderodde.game.zerosum.impl.AlphaBetaPruningSearchEngine;
 import com.github.coderodde.game.zerosum.impl.ConnectFourAlphaBetaPruningSearchEngine;
-import com.github.coderodde.game.zerosum.impl.ParallelConnectFourAlphaBetaPruningSearchEngine;
 import java.awt.Point;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
@@ -47,21 +49,31 @@ public final class ConnectFourFXCanvas extends Canvas {
     private static final int INITIAL_AIM_X = 3;
     private static final int SEARCH_DEPTH = 10;
     private static final int SEED_DEPTH = 2;
+    private static final int PROGRESS_BAR_HEIGHT = 20;
     
-//    private final ConnectFourAlphaBetaPruningSearchEngine engine =
-//            new ConnectFourAlphaBetaPruningSearchEngine(
-//                    new ConnectFourHeuristicFunction());
     
-    private final SearchEngine<ConnectFourBoard> engine = 
-            new ParallelConnectFourAlphaBetaPruningSearchEngine(
-                    new ConnectFourHeuristicFunction(),
-                    SEED_DEPTH);
+//    private final SearchEngine<ConnectFourBoard> engine = 
+//            new ParallelConnectFourAlphaBetaPruningSearchEngine(
+//                    new ConnectFourHeuristicFunction(),
+//                    SEED_DEPTH);
+    
+    private final ConnectFourAlphaBetaPruningSearchEngine engine = 
+            new ConnectFourAlphaBetaPruningSearchEngine(
+                    new ConnectFourHeuristicFunction());
+    
+    private SearchProgress searchProgress;
+    
+    private final ProgressBar progressBar;
     
     private int previousAimX = INITIAL_AIM_X;
     private ConnectFourBoard board = new ConnectFourBoard();
     private double cellLength;
     
-    public ConnectFourFXCanvas() {
+    public ConnectFourFXCanvas(final ProgressBar progressBar) {
+        this.progressBar = progressBar;  
+        this.progressBar.setMaxWidth(Double.MAX_VALUE);
+        this.progressBar.setProgress(0.5);
+        
         setSize();
         paintBackground();
         
@@ -72,6 +84,9 @@ public final class ConnectFourFXCanvas extends Canvas {
         this.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
             processMouseClicked(event);
         });
+        
+        searchProgress = new SearchProgress(SEARCH_DEPTH, progressBar);
+        engine.setSearchProgress(searchProgress);
     }
     
     public void hit(final int x) {
@@ -95,13 +110,34 @@ public final class ConnectFourFXCanvas extends Canvas {
             return;
         }
         
-        final long startTime = System.currentTimeMillis();
+        final Task<Void> task = new Task<>() {
+            
+            @Override
+            protected Void call() throws Exception {
+                final long startTime = System.currentTimeMillis();
+
+                board = engine.search(board, SEARCH_DEPTH);
+
+                final long endTime = System.currentTimeMillis();
+                
+                System.out.printf(
+                        "AI took %d milliseconds.\n", 
+                        endTime - startTime);
+                
+                return null;
+            }
+        };
         
-        board = engine.search(board, SEARCH_DEPTH);
+        final Thread thread = new Thread(task, "ai-bot-task");
+        thread.setDaemon(true);
+        thread.start();
         
-        final long endTime = System.currentTimeMillis();
-        
-        System.out.printf("AI took %d milliseconds.\n", endTime - startTime);
+        try {
+            thread.join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ConnectFourFXCanvas.class.getName())
+                  .log(Level.SEVERE, null, ex);
+        }
         
         if (board.isTerminal()) {
             paintBackground();
