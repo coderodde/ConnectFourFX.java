@@ -72,7 +72,7 @@ public final class ConnectFourFXCanvas extends Canvas {
     public ConnectFourFXCanvas(final ProgressBar progressBar) {
         this.progressBar = progressBar;  
         this.progressBar.setMaxWidth(Double.MAX_VALUE);
-        this.progressBar.setProgress(0.5);
+        this.progressBar.setProgress(0.1);
         
         setSize();
         paintBackground();

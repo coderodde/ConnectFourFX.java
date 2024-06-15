@@ -10,7 +10,8 @@ import javafx.stage.Stage;
 
 /**
  *
- * @author PotilasKone
+ * @version 1.0.0
+ * @since 1.0.0
  */
 public class ConnectFourFX extends Application {
     
